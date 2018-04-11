@@ -17,6 +17,8 @@
   int crankTimer = -1; // Time spent cranking engine.
   int startTimer = -1; // Time spent between start and crank.
   int runTimer = -1; // Time to run before auto shutoff.
+  int startAttempts = -1; // Number of start attempts.
+  boolean runBool = false;
   
   void setup(void) {
   Serial.begin(57600);
@@ -42,10 +44,10 @@
   pinMode(17, OUTPUT); //19 is blue LED, 17 is red LED.
   pinMode(19, OUTPUT); //19 is blue LED, 17 is red LED.
   
-  pinMode(16, OUTPUT);
-  pinMode(15, OUTPUT);
-  pinMode(7, OUTPUT);
-  pinMode(11, OUTPUT);
+  pinMode(16, OUTPUT); // 16 is the access/fuel pump on.
+  pinMode(15, OUTPUT); // 15 is the cranking on.
+  pinMode(7, OUTPUT); // 7 is the access/fuel pump off.
+  pinMode(11, OUTPUT); // 11 is the cranking off.
   
   digitalWrite(16, LOW);
   digitalWrite(15, LOW);
@@ -108,7 +110,7 @@ void loop(void) {
   float voltage = sensorValue * (3.6 / 1023.0);
   // print out the value you read:
   if (voltage >= 0.8) {
-     Serial.print("Pin A01: ");Serial.println(voltage);
+     Serial.print("Pin A0: ");Serial.println(voltage);
      // Brakes have been pushed, shut down all autostart circuits.
      // This will not affect actual engine run circuits, just the autostart
      // ones. So the engine will stay running if the key is in and on.
@@ -119,7 +121,28 @@ void loop(void) {
      crankTimer = -1;
      startTimer = -1;
      runTimer = -1;
+     startAttempts = -1;
      Serial.println(" Kill All - Brakes pressed. ");
+  }
+
+  // read the input on analog pin 5:
+  int voltValue = analogRead(A5);
+  float voltVoltage = voltValue * (3.6 / 1023.0);
+  if (voltVoltage >= 0.8) {
+      // It has enough voltage, it is running.
+      Serial.print("Pin A5: ");Serial.println(voltVoltage);
+      runBool = true;
+  } else {
+    // Not enough voltage, must not be running.
+    runBool = false;
+  }
+
+  if (runBool) {
+    // Since it is running, make sure we are not cranking!
+    crankTimer = -1;
+    startTimer = -1;
+    digitalWrite(15, LOW);
+    digitalWrite(11, HIGH);
   }
 
   if (runTimer == 0) {
@@ -131,13 +154,15 @@ void loop(void) {
         crankTimer = -1;
         startTimer = -1;
         runTimer = -1;
+        startAttempts = -1;
         Serial.println(" Kill All - runTimer elapsed. ");
   } else if (runTimer > 0) {
     runTimer = runTimer -1;
     Serial.print (" runTimer "); Serial.println(runTimer);
   }
 
-  if (startTimer == 0) {
+  if (startTimer == 0 && startAttempts >= 0) {
+    digitalWrite(11, LOW);
     digitalWrite(15, HIGH);
     crankTimer = 3;
     startTimer = -1;
@@ -149,10 +174,20 @@ void loop(void) {
 
   if (crankTimer == 0) {
     digitalWrite(15, LOW);
-    crankTimer = -1;
-    startTimer = -1;
-    runTimer = 600; // 600 seconds = 10 minutes of run time before shutdown.
-    Serial.println (" crankTimer OFF, runTimer started. ");
+    digitalWrite(11, HIGH);
+    if (runBool) {
+      crankTimer = -1;
+      startTimer = -1;
+      startAttempts = -1;
+      runTimer = 600; // 600 seconds = 10 minutes of run time before shutdown.
+      Serial.println (" crankTimer OFF, runTimer started. ");
+    } else {
+      crankTimer = -1;
+      startTimer = 5; // To start process again.
+      runTimer = -1;
+      startAttempts = startAttempts -1;
+      Serial.println (" Not running, try again... "); Serial.println(startAttempts);
+    }
   } else if (crankTimer > 0) {
     crankTimer = crankTimer -1;
     Serial.print (" crankTimer "); Serial.println(crankTimer);
@@ -176,9 +211,13 @@ void loop(void) {
       Serial.println(" released");
       analogWrite(19, 0);
     }
-    if (buttnum == 1) { // Turn on vehicle.
+    if (buttnum == 1) { 
+      // Turn on vehicle, by turning on accessory, fuel pump,
+      // and start timer to crank.
+      digitalWrite(7, LOW);
       digitalWrite(16, HIGH);
-      startTimer = 5;
+      startTimer = 5; // Delay time before cranking.
+      startAttempts = 2; // Number of tries to start (+1).
     } else if (buttnum == 2) {
         // Turn everything off from the button.
         digitalWrite(16, LOW);
@@ -188,6 +227,7 @@ void loop(void) {
         crankTimer = -1;
         startTimer = -1;
         runTimer = -1;
+        startAttempts = -1;
         Serial.println(" Kill All - Button pressed. ");
     }
   }
