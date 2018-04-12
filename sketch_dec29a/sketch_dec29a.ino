@@ -125,12 +125,12 @@ void loop(void) {
      Serial.println(" Kill All - Brakes pressed. ");
   }
 
-  // read the input on analog pin 5:
-  int voltValue = analogRead(A5);
+  // read the input on analog pin 3:
+  int voltValue = analogRead(A3);
   float voltVoltage = voltValue * (3.6 / 1023.0);
   if (voltVoltage >= 0.8) {
       // It has enough voltage, it is running.
-      Serial.print("Pin A5: ");Serial.println(voltVoltage);
+      Serial.print("Pin A3: ");Serial.println(voltVoltage);
       runBool = true;
   } else {
     // Not enough voltage, must not be running.
