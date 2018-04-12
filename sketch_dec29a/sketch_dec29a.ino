@@ -48,6 +48,8 @@
   pinMode(15, OUTPUT); // 15 is the cranking on.
   pinMode(7, OUTPUT); // 7 is the access/fuel pump off.
   pinMode(11, OUTPUT); // 11 is the cranking off.
+  pinMode(30, INPUT); 
+  // Pin 30 will be digital input (5vdc) that brakes were pressed.
   
   digitalWrite(16, LOW);
   digitalWrite(15, LOW);
@@ -92,6 +94,10 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason) {
 void loop(void) {
   
   analogWrite(17, brightness);
+  digitalWrite(16, LOW);  // Conserve power, since these are 
+  digitalWrite(15, LOW);  // Latching relays, they don't need
+  digitalWrite(7, LOW);  // to be on all the time. In between
+  digitalWrite(11, LOW);  // runs they will be off.
 
   // change the brightness for next time through the loop:
   brightness = brightness + fadeAmount;
@@ -105,12 +111,10 @@ void loop(void) {
   // To print the brightness // Serial.println(brightness);
   
   // read the input on analog pin 0:
-  int sensorValue = analogRead(A0);
-  // Convert the analog reading (which goes from 0 - 1023) to a voltage (0 - 3.6V):
-  float voltage = sensorValue * (3.6 / 1023.0);
+  int sensorValue = digitalRead(30);
   // print out the value you read:
-  if (voltage >= 0.8) {
-     Serial.print("Pin A0: ");Serial.println(voltage);
+  if (sensorValue == 1) {
+     Serial.println("Pin 30 HIGH ");
      // Brakes have been pushed, shut down all autostart circuits.
      // This will not affect actual engine run circuits, just the autostart
      // ones. So the engine will stay running if the key is in and on.
