@@ -92,6 +92,9 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason) {
 }
 
 void loop(void) {
+
+  delay(250); // Want a 500 ms delay, but as a timing issue, I am
+  // breaking this in half to iron out the timing on the circuit.
   
   analogWrite(17, brightness);
   digitalWrite(16, LOW);  // Conserve power, since these are 
@@ -106,11 +109,13 @@ void loop(void) {
   if (brightness <= 0 || brightness >= 50) {
     fadeAmount = -fadeAmount;
   }
-  // wait for 500 milliseconds to see the dimming effect
-  delay(500);
+  // wait for 500 milliseconds (with two 250ms) to see the dimming effect
+  delay(250);
   // To print the brightness // Serial.println(brightness);
+  // This really does serve a purpose. This tells me there is power,
+  // and that the program is running, as the brightness changes.
   
-  // read the input on analog pin 0:
+  // read the input on digital pin 30:
   int sensorValue = digitalRead(30);
   // print out the value you read:
   if (sensorValue == 1) {
