@@ -21,8 +21,9 @@
   boolean runBool = false;
   
   void setup(void) {
-  Serial.begin(57600);
+  Serial.begin(115200);
   Serial.println(F("-------------------------------------------"));
+  Serial.println(F("-Homemade autostart by the alaskalinuxuser-"));
 
   Bluefruit.begin();
   // Set max power. Accepted values are: -40, -30, -20, -16, -12, -8, -4, 0, 4
@@ -170,12 +171,23 @@ void loop(void) {
     Serial.print (" runTimer "); Serial.println(runTimer);
   }
 
-  if (startTimer == 0 && startAttempts >= 0) {
+  if (startTimer == 0 && startAttempts > 0) {
     digitalWrite(11, LOW);
     digitalWrite(15, HIGH);
     crankTimer = 3;
     startTimer = -1;
     Serial.println (" crankTimer ON ");
+  } else if (startTimer == 0 && startAttempts == 0) {
+        // Turn everything off from to many attempts.
+        digitalWrite(16, LOW);
+        digitalWrite(15, LOW);
+        digitalWrite(7, HIGH);
+        digitalWrite(11, HIGH);
+        crankTimer = -1;
+        startTimer = -1;
+        runTimer = -1;
+        startAttempts = -1;
+        Serial.println(" Kill All - Too many attempts. ");
   } else if (startTimer > 0) {
     startTimer = startTimer -1;
     Serial.print (" startTimer "); Serial.println(startTimer);
@@ -226,7 +238,7 @@ void loop(void) {
       digitalWrite(7, LOW);
       digitalWrite(16, HIGH);
       startTimer = 5; // Delay time before cranking.
-      startAttempts = 2; // Number of tries to start (+1).
+      startAttempts = 3; // Number of tries to start.
     } else if (buttnum == 2) {
         // Turn everything off from the button.
         digitalWrite(16, LOW);
