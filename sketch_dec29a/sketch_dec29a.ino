@@ -138,13 +138,14 @@ void loop(void) {
   // read the input on analog pin 3:
   int voltValue = analogRead(A3);
   float voltVoltage = voltValue * (3.6 / 1023.0);
-  if (voltVoltage >= 0.8) {
+  if (voltVoltage >= 0.9) {
       // It has enough voltage, it is running.
-      Serial.print("Pin A3: ");Serial.println(voltVoltage);
+      Serial.print("Greater than 13v, Pin A3: ");Serial.println(voltVoltage);
       runBool = true;
   } else {
     // Not enough voltage, must not be running.
     runBool = false;
+    Serial.print("Less than 13v, Pin A3: ");Serial.println(voltVoltage);
   }
 
   if (runBool) {
@@ -174,7 +175,7 @@ void loop(void) {
   if (startTimer == 0 && startAttempts > 0) {
     digitalWrite(11, LOW);
     digitalWrite(15, HIGH);
-    crankTimer = 3;
+    crankTimer = 4;
     startTimer = -1;
     Serial.println (" crankTimer ON ");
   } else if (startTimer == 0 && startAttempts == 0) {
